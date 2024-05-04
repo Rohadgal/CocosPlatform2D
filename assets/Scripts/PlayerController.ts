@@ -25,6 +25,7 @@ export class PlayerController extends Component {
     private _deltaPos: Vec3 = new Vec3(0, 0, 0);
     // store the final position of the player, when the player's jumping action ends, it will be used directly to avoid cumulative errors.
     private _targetPos: Vec3 = new Vec3();
+    private _curMoveIndex: number = 0;
 
 
     start() {
@@ -32,9 +33,16 @@ export class PlayerController extends Component {
     }
 
     reset(){
-
+        this._curMoveIndex = 0;
     }
     
+    setInputActive(active: boolean) {
+        if (active) {
+            input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+        } else {
+            input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+        }
+    }
 
     onMouseUp(event: EventMouse) {
         if (event.getButton() === EventMouse.BUTTON_LEFT) {
@@ -77,6 +85,12 @@ export class PlayerController extends Component {
                 this.BodyAnim.play('twoStep');
             }
         }
+
+        this._curMoveIndex += step;
+    }
+
+    onOnceJumpEnd() {
+        this.node.emit('JumpEnd', this._curMoveIndex);
     }
 
     update(deltaTime: number) {
@@ -90,6 +104,7 @@ export class PlayerController extends Component {
             this.node.setPosition(this._targetPos);
             //clear jump state
             this._startJump = false;
+            this.onOnceJumpEnd();  
         } else {
             //if it still needs to move.
             // copy the position of the node.
